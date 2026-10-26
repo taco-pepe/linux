@@ -1,0 +1,36 @@
+name: TacoLinux Kernel Build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout kernel source
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential bc bison flex \
+            libssl-dev libelf-dev \
+            libncurses-dev dwarves \
+            git
+
+      - name: Configure kernel
+        run: |
+          make allyesconfig
+          scripts/config --set-str LOCALVERSION "-taco"
+          scripts/config --disable LOCALVERSION_AUTO
+          make olddefconfig
+
+      - name: Build TacoLinux kernel
+        run: |
+          make -j"$(nproc)" \
+            KBUILD_BUILD_USER=taco \
+            KBUILD_BUILD_HOST=ci
